@@ -83,7 +83,7 @@ class user_interface:
         self.interface.configure(bg="#212121")
         self.interface.title("Dome")
         
-        self.dome_type = "MICRO DOME"
+        self.dome_type = "GRAND DOME"
         self.aq_type = "RAPIDE"
         
         self.frame = Frame(self.interface, bg="#212121")
@@ -255,7 +255,7 @@ class user_interface:
         self.button_changer_acquisition = Button(self.capture_frame, text="Changer", font=("Roboto Mono", 16 * -1, "bold"),
                                          bg="#212121", fg="#FFF3AE", command=self._changer_acquisition_)
         
-        self.label_acquistion_info = Label(self.capture_frame, width=25, height=3, text="Type de Dome : "+self.dome_type+" \nType d'acquisition : "+self.aq_type, 
+        self.label_acquistion_info = Label(self.capture_frame, width=25, height=3, text="Type d'acquisition : "+self.aq_type, 
                                            bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 15 * -1))
     
         
@@ -331,18 +331,8 @@ class user_interface:
                                   relief="flat", cursor="tcross", command=self.go_out)
         self.capture_button_exit_['image'] = self.icon_retour
       
-        self.dome_type_items = ["MICRO DOME", "GRAND DOME"]
         self.aq_type_items = ["RAPIDE", "DENSE"]
         
-        
-        self.label_dome_type = Label(self.capture_editer, width=18, height=2, text="Type de Dome :   ", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 23 * -1))
-        
-        
-        self.dome_type_list = Listbox(self.capture_editer,  height=2, width=16, exportselection=0, font=("Roboto Mono", 50 * -1, "bold"), bg="#212121", fg="#FFF3AE",
-                                         selectmode=SINGLE)
-        for dome in self.dome_type_items:
-            self.dome_type_list.insert(END, dome)
-            
         
         self.label_aq_type = Label(self.capture_editer, width=18, height=2, text="Type d'Acquisiton : ", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 23 * -1))
         self.aq_type_list = Listbox(self.capture_editer,  height=2, width=16, exportselection=0, font=("Roboto Mono", 50 * -1, "bold"), bg="#212121", fg="#FFF3AE",
@@ -352,18 +342,14 @@ class user_interface:
             self.aq_type_list.insert(END, type_)
 
         
-        self.dome_type_list.bind('<<ListboxSelect>>', self.CurSelet_dome)
         self.aq_type_list.bind('<<ListboxSelect>>', self.CurSelet_aq)
-    
-        
+
         self._capture_frame_exit_.grid(row=0, column=0, sticky='nw')
         self.capture_button_exit_.grid(row=0, column=0, sticky='nw')
         
         self._capture_frame_aq_.grid(row=0, column=0, sticky="news")
-        self.label_dome_type.place(x=93 ,y=25)
-        self.dome_type_list.place(x=100 ,y=70)
-        self.label_aq_type.place(x=100, y=220)
-        self.aq_type_list.place(x=100, y=265)
+        self.label_aq_type.place(x=100, y=130)
+        self.aq_type_list.place(x=100, y=180)
         self.___label_mercurio_icn___.place(x=-15, y=425)
         
     def go_out(self):
@@ -599,8 +585,9 @@ class user_interface:
         media_path = "/media/pi/"
         folders_in_media = os.listdir(media_path)
         usb_path = media_path+folders_in_media[0]
-        os.system("sudo cp -r "+rti_path+projet_select+" "+usb_path)
-    
+        os.system("cp -r "+rti_path+projet_select+" "+usb_path)
+        #shutil.copy(rti_path+projet_select, usb_path)
+        
     def copy_to_usb_(self):
         self.project_wind.update()
         
@@ -630,14 +617,17 @@ class user_interface:
                 print("USB +++ ",  number_of_files_usb) 
                 
                 self.button_copy_project['state'] = DISABLED
-                self.button_delete_project['state'] = DISABLED 
+                self.button_delete_project['state'] = DISABLED
+                
                 while(number_of_files_usb<number_of_files):
                     print("copying")
                     number_of_files_usb = self.number_of_files(usb_path+"/"+projet_select)
                     print(number_of_files_usb)
                     self.label_Nombre.config(text="Copie en Cours ... "+str(number_of_files_usb)+" / "+str(number_of_files))
                     self.project_wind.update()
+                    
                 #os.system("cd "+usb_path+" ; "+"sudo zip -r "+projet_select+".zip "+str(projet_select))
+                
                 flash_green()
                 print("Projet copié avec succès !")
                 self.button_copy_project['state'] = NORMAL
@@ -653,6 +643,8 @@ class user_interface:
                 self.label_Nombre.config(text="Disponible : "+str(round((free/2**30), 2))+"/"+str(round((total/2**30), 2))+" GO")
             elif project_existance == True :
                 self.label_Nombre.config(text="Projet portant le même nom existe déjà !")
+        os.system("sudo chmod 777 "+usb_path)
+        os.system("sudo chmod 775 "+usb_path)
         self.project_wind.update()
         
     def number_of_files(self, path):
@@ -1222,36 +1214,46 @@ class user_interface:
                 line = str(line)[2:].split(':')
                 camera_infos.append(line)
             
-            aperture = int(settings.image_data("aperture")['Current'].split(':')[-1])
-            iso = int(settings.image_data("iso")['Current'].split(':')[-1])
-            whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
-            shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
-            
-            _parameters_ = {'aperture':aperture, 'shutterspeed':shutterspeed,
-                                     'iso':iso, 'whitebalance':whitebalance
-                                     }
+            try:
+                aperture = int(settings.image_data("aperture")['Current'].split(':')[-1])
+                iso = int(settings.image_data("iso")['Current'].split(':')[-1])
+                whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
+                shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
+                
+                _parameters_ = {'aperture':aperture, 'shutterspeed':shutterspeed,
+                                         'iso':iso, 'whitebalance':whitebalance
+                                         }
 
-            display_list = list(_parameters_.keys())
-                        
-            self.entry_param = []
-           
-            for i, param in enumerate(display_list):
-                self.scrollbar = Scrollbar(self.frame, orient="vertical", width=35, bg="#FFF3AE", troughcolor="#212121")
-                self.list_para = Listbox(self.frame, height=2, width=25, exportselection=0, font=("Roboto Mono", 20 * -1, "bold"), bg="#212121", fg="#FFF3AE",
-                                         selectmode=SINGLE, yscrollcommand=self.scrollbar.set)
-                para_list = settings.image_data(param)['Choices']
-                for j in para_list:
-                    self.list_para.insert(END, param+" "+j.split(" ")[-1]+" "+j.split(" ")[1])    
-                self.scrollbar.grid(row=i+1, column=2, padx=5, pady=20, sticky='news')
-                self.list_para.grid(row=i+1, column=1, padx=15, pady=20, sticky='news')
-                self.scrollbar.config(command=self.list_para.yview)
-                self.list_para.bind('<<ListboxSelect>>', self.select_text)
-  
+                display_list = list(_parameters_.keys())
+                            
+                self.entry_param = []
+               
+                for i, param in enumerate(display_list):
+                    self.scrollbar = Scrollbar(self.frame, orient="vertical", width=35, bg="#FFF3AE", troughcolor="#212121")
+                    self.list_para = Listbox(self.frame, height=2, width=25, exportselection=0, font=("Roboto Mono", 20 * -1, "bold"), bg="#212121", fg="#FFF3AE",
+                                             selectmode=SINGLE, yscrollcommand=self.scrollbar.set)
+                    para_list = settings.image_data(param)['Choices']
+                    for j in para_list:
+                        self.list_para.insert(END, param+" "+j.split(" ")[-1]+" "+j.split(" ")[1])    
+                    self.scrollbar.grid(row=i+1, column=2, padx=5, pady=20, sticky='news')
+                    self.list_para.grid(row=i+1, column=1, padx=15, pady=20, sticky='news')
+                    self.scrollbar.config(command=self.list_para.yview)
+                    self.list_para.bind('<<ListboxSelect>>', self.select_text)
+      
+                
+                for i,d in enumerate(display_list):
+                    self.label = Label(self.frame, text=" "+d+" ", height=2, bd=2, width=20, relief="flat", font=("Roboto Mono", 15 * -1, "bold"), fg="#FFF3AE",
+                                          bg="#212121").grid(row=i+1, column=0, padx=50, pady=20, sticky='news')
+                which["Camera"] = camera
+                
+            except:
+                self.label = Label(self.frame, text="Camera Pas Prête, Veuillez redémarrer l'application !", bg="#212121", width=50, font=("Roboto Mono", 16 * -1, "bold"),
+                               fg="#FFF3AE").place(x=150, y=100)
             
-            for i,d in enumerate(display_list):
-                self.label = Label(self.frame, text=" "+d+" ", height=2, bd=2, width=20, relief="flat", font=("Roboto Mono", 15 * -1, "bold"), fg="#FFF3AE",
-                                      bg="#212121").grid(row=i+1, column=0, padx=50, pady=20, sticky='news')
-            which["Camera"] = camera 
+                self.label_camera_deconnectee = Label(self.cam_wind, bg="#212121", image=self.camera_deconnctee_icon)
+                self.label_camera_deconnectee.place(x=325, y=235)
+                self.button_exit = Button(self.frame, bg="#212121", command=self.cam_wind.destroy)
+                self.button_exit['image'] = self._button_retour_icon_
         
         else :
             self.label = Label(self.frame, text=" Aucune caméra détectée, branchez la caméra SVP !", bg="#212121", width=50, font=("Roboto Mono", 16 * -1, "bold"),
@@ -1383,6 +1385,7 @@ class photographer_data(Tk):
             widget.insert("insert", text)
             
     def delete_text(self):
+        self.btn_save['state'] = NORMAL
         widget = self.focus_get()
         widget.delete(len(widget.get())-1, END)
     
@@ -1931,6 +1934,7 @@ def led_2_ctrl(state):
 if __name__ == '__main__':
     settings.killprocess()
     try:
+        os.system("rm /home/pi/grandDome/images/rti/*.JPG")
         os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
     except:
         pass
@@ -1953,6 +1957,12 @@ if __name__ == '__main__':
     image_path = "/home/pi/grandDome/images/"
     rti_path = "/home/pi/grandDome/images/rti/"
     lp_path = "/home/pi/grandDome/LPFiles/"
+    
+    try:
+        for i in range(10):
+            gp(["--folder", "/store_00020001/DCIM/10"+str(i)+"CANON", "-R", "--delete-all-files"])
+    except:
+        pass
 
     ### Camera options
     camera_folder = "/store_00020001/DCIM/100CANON"
