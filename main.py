@@ -756,225 +756,233 @@ class user_interface:
             
             
             ######### Camera Battery Level
-            battery_level = int(settings.image_data("batterylevel")['Current'][-4:-1])
-            print("---Batterie---", battery_level)
-            if (battery_level > 5):
-   
-                self.icon_retour = ImageTk.PhotoImage(Image.open(icons_path_+"IconeAnnuler.png").resize((65, 65)), Image.BILINEAR)
-                self.capture_button_exit_ = Button(self.capture_wind_aq, text="Sortir", bg="#212121", fg="#212121",
-                                      relief="flat", cursor="tcross", command=self.__stop__)
-                
-                self.capture_button_exit_['image'] = self.icon_retour
-                self.capture_button_exit_.place(x=725, y=0)
-                
-                s = Style()
-                s.theme_use('clam')
-                s.configure("green.Horizontal.TProgressbar", foreground='green', background='green')
-                
-                self.progress_bar = Progressbar(self.capture_wind_aq, style="green.Horizontal.TProgressbar", orient=HORIZONTAL, length=400)
-               
-                
-                self.label_image_begin = Label(self.capture_wind_aq, width=400, height=300, bg="#212121")
-                self.label_image_begin.place(x=175, y=50)
-                
-                self.begin_image_ = ImageTk.PhotoImage(Image.open(icons_path_+"connected.png").resize((150, 150)), Image.BILINEAR)
-                self.label_image_begin.config(image=self.begin_image_)
-                
-                self.label_aq = Label(self.capture_wind_aq, text="", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1))
-                self.label_aq.place(x=275, y=400)
-                
-                self.label_aq.config(text="Caméra et i2c détectées")
-                #self.progress_bar.place(x=200, y=360)
-                
-                self.capture_wind_aq.update_idletasks()
-                self.capture_wind_aq.update()
-                
-                ##########
-                
-                which["Light"]["Number"]= image_nb
-                
-                if image_nb == 85 :
-                    how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI LEGERE"
-                    led_list = list_led85
+            try:
+                battery_level = int(settings.image_data("batterylevel")['Current'][-4:-1])
+                print("---Batterie---", battery_level)
+                if (battery_level > 5):
+       
+                    self.icon_retour = ImageTk.PhotoImage(Image.open(icons_path_+"IconeAnnuler.png").resize((65, 65)), Image.BILINEAR)
+                    self.capture_button_exit_ = Button(self.capture_wind_aq, text="Sortir", bg="#212121", fg="#212121",
+                                          relief="flat", cursor="tcross", command=self.__stop__)
                     
-                elif image_nb == 155:
-                    how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI DENSE"
-                    led_list = leds_a_allumer_155
+                    self.capture_button_exit_['image'] = self.icon_retour
+                    self.capture_button_exit_.place(x=725, y=0)
                     
-                elif image_nb == 105:
-                    how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI MICRODOME"
-                    how["Modality"]['Protocol']['Detail']['DomeDiameterinmm']=280
-                    led_list = range(nbLED_microDome)
-                
-                elif image_nb == 35:
-                    how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI MICRODOME"
-                    how["Modality"]['Protocol']['Detail']['DomeDiameterinmm']=280
-                    led_list = range(nbTiles_microdome)
+                    s = Style()
+                    s.theme_use('clam')
+                    s.configure("green.Horizontal.TProgressbar", foreground='green', background='green')
                     
-                json_file(metadata(which=which))
-                json_file(metadata(how=how))
-                subprocess.run(["gphoto2", "--folder", camera_folder, "-R", "--delete-all-files"])
-                ############### ------
-                projectname = self.project_data()
-                
-                self.label_aq['text'] = ""
-                while(os.path.exists(rti_path+projectname+"_"+str(image_nb))):
-                    self.label_aq.config(text="Le nom de projet existe déjà")
-                    self.capture_wind_aq.update()
-                
-                if len(projectname) == 0:
-                    try:
-                        os.mkdir(rti_path+default_projectname+"_"+str(image_nb))
-                    except:
-                        pass
-                    if os.path.exists(rti_path+default_projectname+"_"+str(image_nb)):
-                        print("ça existe!")
-                        while(os.path.exists(rti_path+default_projectname+"_"+str(image_nb))):
-                            self.label_aq.config(text="Le nom de projet existe déjà")
-                            self.capture_wind_aq.update()
-                    self.thumbnail(default_projectname+"_"+str(image_nb))
-                    self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+default_projectname+"_"+str(image_nb)+"/image.JPG"
-                                                                         ).resize((400, 300)), Image.BILINEAR)
-                else:
-                    try:
-                        os.mkdir(rti_path+projectname+"_"+str(image_nb))
-                    except:
-                        pass
-                    self.thumbnail(projectname+"_"+str(image_nb))
-                    self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+projectname+"_"+str(image_nb)+"/image.JPG"
-                                                                         ).resize((400, 300)), Image.BILINEAR)
+                    self.progress_bar = Progressbar(self.capture_wind_aq, style="green.Horizontal.TProgressbar", orient=HORIZONTAL, length=400)
+                   
                     
-                #####################################
-                
-               
-                self.label_image_begin['image'] = self.thumbnail_image
-                
-                what["Appelation"]=projectname
-                json_file(metadata(what=what))
-                
-                file_name = rti_path+projectname+"rti%Y%m%d%H%M%S%f.%C"
-                
-                #### Save Json File
-                camera_data = save_camera_data()
-                which.update(camera_data)
-                
-                lp_filename = how['Modality']['Protocol']['Detail']['LPFilename']
-                
-                if len(projectname) == 0:
-                    json_file(metadata(what=what, how=how, who=who, where=where, when=when, which=which, why=why),
-                              path=str(rti_path+default_projectname+"_"+str(image_nb)+"/"))
-                    shutil.copy(lp_path+"LP_"+str(image_nb)+".lp", str(rti_path+default_projectname+"_"+str(image_nb)+"/"))
-                    os.rename(rti_path+default_projectname+"_"+str(image_nb)+"/"+"LP_"+str(image_nb)+".lp",
-                                  str(rti_path+default_projectname+"_"+str(image_nb)+"/"+lp_filename+".lp"))
-                else:
-                    json_file(metadata(what=what, how=how, who=who, where=where, when=when, which=which,why=why),
-                              path=str(rti_path+projectname+"_"+str(image_nb)+"/"))
-                    shutil.copy(lp_path+"LP_"+str(image_nb)+".lp", str(rti_path+projectname+"_"+str(image_nb)+"/"))
+                    self.label_image_begin = Label(self.capture_wind_aq, width=400, height=300, bg="#212121")
+                    self.label_image_begin.place(x=175, y=50)
                     
-                    os.rename(rti_path+projectname+"_"+str(image_nb)+"/"+"LP_"+str(image_nb)+".lp",
-                                  rti_path+projectname+"_"+str(image_nb)+"/"+lp_filename+".lp")
+                    self.begin_image_ = ImageTk.PhotoImage(Image.open(icons_path_+"connected.png").resize((150, 150)), Image.BILINEAR)
+                    self.label_image_begin.config(image=self.begin_image_)
                     
-                try:
-                    bus = smbus.SMBus(1)
-                    bus.write_byte(0x44, 1)
-                except:
-                    pass
-                
-                self.progress_bar.place(x=175, y=375)
-                for s, i in enumerate(led_list):
-                    settings.killprocess()
-                    print(str(s), i)
-                    self.label_aq.config(text="En Cours de PDV "+str(s)+"/"+str(image_nb)+" ... ")
-                    self.progress_bar['value'] += 100/(len(led_list))
-                    self.capture_wind_aq.update_idletasks()
-                    if image_nb == 35:
-                        bus.write_block_data(0x44, 0, [6, i])
-                    else:
-                        bus.write_block_data(0x44, 0, [3, i])
-                    time.sleep(0.01)
-                    subprocess.run(["gphoto2", "--trigger-capture", "--wait-event=10ms"])
-                    time.sleep(time_cut)
-                    self.capture_wind_aq.update()
-                bus.write_byte(0x44, 1)
-                               
-                self.label_aq['text'] = "Enregistrement des images..."
-                self.progress_bar['value'] = 0
-                self.capture_wind_aq.update()
-                
-                try:
-                    if len(projectname) == 0:
-                        os.mkdir(rti_path+default_projectname+"_"+str(image_nb)+"/rti")
-                    else:
-                        os.mkdir(rti_path+projectname+"_"+str(image_nb)+"/rti")
-                except:
-                    pass       
-    
-                print("filename===", file_name)
-                data_getter = threading.Thread(target=settings.get_data_from_camera, args=(file_name,))
-                
-                self.progress_bar['value'] = 0
-                nombre_img = len(glob(rti_path+"*.JPG"))
-                
-                data_getter.start()
-                
-                while(nombre_img<image_nb):
-                    nombre_img = len(glob(rti_path+"*.JPG"))
-                    self.progress_bar['value'] = ((nombre_img)/(image_nb))*100
-                    self.label_aq.config(text=str(nombre_img)+"/"+str(image_nb))
+                    self.label_aq = Label(self.capture_wind_aq, text="", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1))
+                    self.label_aq.place(x=275, y=400)
+                    
+                    self.label_aq.config(text="Caméra et i2c détectées")
+                    #self.progress_bar.place(x=200, y=360)
+                    
                     self.capture_wind_aq.update_idletasks()
                     self.capture_wind_aq.update()
-                             
-                nombre_img = len(glob(rti_path+"*.JPG"))
-                print("init", nombre_img)
-    
-                self.progress_bar['value'] = 0
-                self.capture_wind_aq.update()
-                
-                jpg_files = glob(rti_path+'*.JPG')
-                jpg_files.sort()
-                print("On a trouvé ---> ", len(jpg_files), "Images")
-                
-                for i, img in enumerate(jpg_files):
-                    renamed_file = rti_path+"IMG_"+str(i+1).zfill(4)
-                    os.rename(img, renamed_file+".JPG")
-                    self.label_aq.config(text="Image  "+str(i)+"/"+str(image_nb)+ " renommée ! ")
-                    if len(projectname) == 0:
-                        dest = shutil.move(renamed_file+".JPG", rti_path+default_projectname+"_"+str(image_nb)+"/rti/")
-                        dest = shutil.copy(rti_path+default_projectname+"_"+str(image_nb)+"/"+lp_filename+".lp", rti_path+default_projectname+"_"+str(image_nb)+"/rti/")
-                        self.label_aq.config(text="Image  "+str(i)+"/"+str(image_nb)+ " déplacée ! ")
-                        self.progress_bar['value'] += 100/image_nb
-                        self.capture_wind_aq.update()
+                    
+                    ##########
+                    
+                    which["Light"]["Number"]= image_nb
+                    
+                    if image_nb == 85 :
+                        how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI LEGERE"
+                        led_list = list_led85
                         
-                    else :
-                        dest = shutil.move(renamed_file+".JPG", rti_path+projectname+"_"+str(image_nb)+"/rti/")
-                        dest = shutil.copy(rti_path+projectname+"_"+str(image_nb)+"/"+lp_filename+".lp", rti_path+projectname+"_"+str(image_nb)+"/rti/")
-                        self.label_aq.config(text="Image "+str(i)+"/"+str(image_nb)+" déplacée ! ")
-                        self.progress_bar['value'] += 100/image_nb
+                    elif image_nb == 155:
+                        how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI DENSE"
+                        led_list = leds_a_allumer_155
+                        
+                    elif image_nb == 105:
+                        how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI MICRODOME"
+                        how["Modality"]['Protocol']['Detail']['DomeDiameterinmm']=280
+                        led_list = range(nbLED_microDome)
+                    
+                    elif image_nb == 35:
+                        how['Modality']['Protocol']['Detail']['AcquisitionType']="RTI MICRODOME"
+                        how["Modality"]['Protocol']['Detail']['DomeDiameterinmm']=280
+                        led_list = range(nbTiles_microdome)
+                        
+                    json_file(metadata(which=which))
+                    json_file(metadata(how=how))
+                    subprocess.run(["gphoto2", "--folder", camera_folder, "-R", "--delete-all-files"])
+                    ############### ------
+                    projectname = self.project_data()
+                    
+                    self.label_aq['text'] = ""
+                    while(os.path.exists(rti_path+projectname+"_"+str(image_nb))):
+                        self.label_aq.config(text="Le nom de projet existe déjà")
                         self.capture_wind_aq.update()
+                    
+                    if len(projectname) == 0:
+                        try:
+                            os.mkdir(rti_path+default_projectname+"_"+str(image_nb))
+                        except:
+                            pass
+                        if os.path.exists(rti_path+default_projectname+"_"+str(image_nb)):
+                            print("ça existe!")
+                            while(os.path.exists(rti_path+default_projectname+"_"+str(image_nb))):
+                                self.label_aq.config(text="Le nom de projet existe déjà")
+                                self.capture_wind_aq.update()
+                        self.thumbnail(default_projectname+"_"+str(image_nb))
+                        self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+default_projectname+"_"+str(image_nb)+"/image.JPG"
+                                                                             ).resize((400, 300)), Image.BILINEAR)
+                    else:
+                        try:
+                            os.mkdir(rti_path+projectname+"_"+str(image_nb))
+                        except:
+                            pass
+                        self.thumbnail(projectname+"_"+str(image_nb))
+                        self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+projectname+"_"+str(image_nb)+"/image.JPG"
+                                                                             ).resize((400, 300)), Image.BILINEAR)
+                        
+                    #####################################
+                    
+                   
+                    self.label_image_begin['image'] = self.thumbnail_image
+                    
+                    what["Appelation"]=projectname
+                    json_file(metadata(what=what))
+                    
+                    file_name = rti_path+projectname+"rti%Y%m%d%H%M%S%f.%C"
+                    
+                    #### Save Json File
+                    camera_data = save_camera_data()
+                    which.update(camera_data)
+                    
+                    lp_filename = how['Modality']['Protocol']['Detail']['LPFilename']
+                    
+                    if len(projectname) == 0:
+                        json_file(metadata(what=what, how=how, who=who, where=where, when=when, which=which, why=why),
+                                  path=str(rti_path+default_projectname+"_"+str(image_nb)+"/"))
+                        shutil.copy(lp_path+"LP_"+str(image_nb)+".lp", str(rti_path+default_projectname+"_"+str(image_nb)+"/"))
+                        os.rename(rti_path+default_projectname+"_"+str(image_nb)+"/"+"LP_"+str(image_nb)+".lp",
+                                      str(rti_path+default_projectname+"_"+str(image_nb)+"/"+lp_filename+".lp"))
+                    else:
+                        json_file(metadata(what=what, how=how, who=who, where=where, when=when, which=which,why=why),
+                                  path=str(rti_path+projectname+"_"+str(image_nb)+"/"))
+                        shutil.copy(lp_path+"LP_"+str(image_nb)+".lp", str(rti_path+projectname+"_"+str(image_nb)+"/"))
+                        
+                        os.rename(rti_path+projectname+"_"+str(image_nb)+"/"+"LP_"+str(image_nb)+".lp",
+                                      rti_path+projectname+"_"+str(image_nb)+"/"+lp_filename+".lp")
+                        
+                    try:
+                        bus = smbus.SMBus(1)
+                        bus.write_byte(0x44, 1)
+                    except:
+                        pass
+                    
+                    self.progress_bar.place(x=175, y=375)
+                    for s, i in enumerate(led_list):
+                        settings.killprocess()
+                        print(str(s), i)
+                        self.label_aq.config(text="En Cours de PDV "+str(s)+"/"+str(image_nb)+" ... ")
+                        self.progress_bar['value'] += 100/(len(led_list))
+                        self.capture_wind_aq.update_idletasks()
+                        if image_nb == 35:
+                            bus.write_block_data(0x44, 0, [6, i])
+                        else:
+                            bus.write_block_data(0x44, 0, [3, i])
+                        time.sleep(0.01)
+                        subprocess.run(["gphoto2", "--trigger-capture", "--wait-event=10ms"])
+                        time.sleep(time_cut)
+                        self.capture_wind_aq.update()
+                    bus.write_byte(0x44, 1)
+                                   
+                    self.label_aq['text'] = "Enregistrement des images..."
+                    self.progress_bar['value'] = 0
+                    self.capture_wind_aq.update()
+                    
+                    try:
+                        if len(projectname) == 0:
+                            os.mkdir(rti_path+default_projectname+"_"+str(image_nb)+"/rti")
+                        else:
+                            os.mkdir(rti_path+projectname+"_"+str(image_nb)+"/rti")
+                    except:
+                        pass       
+        
+                    print("filename===", file_name)
+                    data_getter = threading.Thread(target=settings.get_data_from_camera, args=(file_name,))
+                    
+                    self.progress_bar['value'] = 0
+                    nombre_img = len(glob(rti_path+"*.JPG"))
+                    
+                    data_getter.start()
+                    
+                    while(nombre_img<image_nb):
+                        nombre_img = len(glob(rti_path+"*.JPG"))
+                        self.progress_bar['value'] = ((nombre_img)/(image_nb))*100
+                        self.label_aq.config(text=str(nombre_img)+"/"+str(image_nb))
+                        self.capture_wind_aq.update_idletasks()
+                        self.capture_wind_aq.update()
+                                 
+                    nombre_img = len(glob(rti_path+"*.JPG"))
+                    print("init", nombre_img)
+        
+                    self.progress_bar['value'] = 0
+                    self.capture_wind_aq.update()
+                    
+                    jpg_files = glob(rti_path+'*.JPG')
+                    jpg_files.sort()
+                    print("On a trouvé ---> ", len(jpg_files), "Images")
+                    
+                    for i, img in enumerate(jpg_files):
+                        renamed_file = rti_path+"IMG_"+str(i+1).zfill(4)
+                        os.rename(img, renamed_file+".JPG")
+                        self.label_aq.config(text="Image  "+str(i)+"/"+str(image_nb)+ " renommée ! ")
+                        if len(projectname) == 0:
+                            dest = shutil.move(renamed_file+".JPG", rti_path+default_projectname+"_"+str(image_nb)+"/rti/")
+                            dest = shutil.copy(rti_path+default_projectname+"_"+str(image_nb)+"/"+lp_filename+".lp", rti_path+default_projectname+"_"+str(image_nb)+"/rti/")
+                            self.label_aq.config(text="Image  "+str(i)+"/"+str(image_nb)+ " déplacée ! ")
+                            self.progress_bar['value'] += 100/image_nb
+                            self.capture_wind_aq.update()
+                            
+                        else :
+                            dest = shutil.move(renamed_file+".JPG", rti_path+projectname+"_"+str(image_nb)+"/rti/")
+                            dest = shutil.copy(rti_path+projectname+"_"+str(image_nb)+"/"+lp_filename+".lp", rti_path+projectname+"_"+str(image_nb)+"/rti/")
+                            self.label_aq.config(text="Image "+str(i)+"/"+str(image_nb)+" déplacée ! ")
+                            self.progress_bar['value'] += 100/image_nb
+                            self.capture_wind_aq.update()
+                    
+                    try:
+                        bus.write_byte(0x44, 0)
+                    except:
+                        pass
+                    
+                    subprocess.run(["gphoto2", "--folder", camera_folder,
+                                    "-R", "--delete-all-files"])
+                    self.capture_wind_aq.destroy()
+                    self.capture_wind.update_idletasks()()
+                    self.capture_wind.update()
+                    try:
+                        bus.close()
+                    except:
+                        pass
+                    
                 
-                try:
-                    bus.write_byte(0x44, 0)
-                except:
-                    pass
-                
-                subprocess.run(["gphoto2", "--folder", camera_folder,
-                                "-R", "--delete-all-files"])
-                self.capture_wind_aq.destroy()
-                self.capture_wind.update_idletasks()()
-                self.capture_wind.update()
-                try:
-                    bus.close()
-                except:
-                    pass
-                
-            
-            elif (battery_level <= 5): 
+                elif (battery_level <= 5): 
+                    self.project_name_label.config(text=" ") 
+                    self.label_aq['text'] = " Le niveau de batterie de la caméra est < 25%"
+                    self.camera_battery = ImageTk.PhotoImage(Image.open(icons_path_+"camera_battery.png").resize((300, 280)), Image.BILINEAR)
+                    self.label_image_begin['image'] = self.camera_battery
+                    self.label_image_begin.place(x=100, y=50)
+            except:
                 self.project_name_label.config(text=" ") 
-                self.label_aq['text'] = " Le niveau de batterie de la caméra est < 25%"
-                self.camera_battery = ImageTk.PhotoImage(Image.open(icons_path_+"camera_battery.png").resize((300, 280)), Image.BILINEAR)
-                self.label_image_begin['image'] = self.camera_battery
-                self.label_image_begin.place(x=100, y=50)
-                                    
+                self.label_aq['text'] = " Veuillez redémarrer l'application !"
+                self.camera_disconnected = ImageTk.PhotoImage(Image.open(icons_path_+"camera_deconnectee.png").resize((260, 180)), Image.BILINEAR)
+                self.label_image_begin['image'] = self.camera_disconnected
+                camera_available = settings.camera_available()
+                
+                                        
         elif camera_available == False or i2c_state == 0 : 
             self.project_name_label.config(text=" ") 
             self.label_aq['text'] = " Caméra ou i2c non connectée !"
@@ -1176,7 +1184,9 @@ class user_interface:
             self.slider_allumer_LedNum['troughcolor'] = '#a0a0a0'
             self.slider_allumer_LedNum['state'] = 'disabled'
             led_allumee_check = False
+            
         else:
+
             bus.write_block_data(0x44, 0, [3, 0])
             self.button_allumer_led_x['image'] = self.allumer_ledX
             self.slider_allumer_LedNum['troughcolor'] = 'green'
@@ -1185,7 +1195,7 @@ class user_interface:
             self.slider_intensity['state'] = 'disabled'
             self.slider_intensity['troughcolor'] = '#a0a0a0'
             led_allumee_check = True
-            
+                    
     ##   -----
     
     def reglage_cameratester(self):
