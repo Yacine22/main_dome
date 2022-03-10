@@ -23,6 +23,36 @@ from i2c_devices import i2c_checker
 import RPi.GPIO as GPIO
 from zipfile import ZipFile
 
+###***
+
+use_button=6                     # lowest button on PiTFT+
+
+from gpiozero import Button as __Button__
+from signal import pause
+from subprocess import check_call
+
+held_for=0.0
+
+def rls():
+        global held_for
+        if (held_for > 6.0):
+                check_call(['/sbin/poweroff'])
+        elif (held_for > 1.0):
+                check_call(['/sbin/reboot'])
+        else:
+            held_for = 0.0
+
+def hld():
+        global held_for
+        # need to use max() as held_time resets to zero on last callback
+        held_for = max(held_for, button.held_time + button.hold_time)
+
+
+
+####
+
+
+
 ###### metadata ---------------------------------
 # focal = settings.focal_length()
 today_time = datetime.datetime.now().strftime("%H:%M")
@@ -31,8 +61,10 @@ today_date = datetime.datetime.now().strftime("%d/%m/%Y")
 
 with open("/home/pi/grandDome/actor_data.json", "r") as r_actor:
     actor_data = json.load(r_actor)
-
-who = {"Actor":actor_data["NOM d'UTILISATEUR"], "Company":actor_data["SOCIETE"]}
+try:
+    who = {"Actor":actor_data["NOM d'UTILISATEUR"], "Company":actor_data["SOCIETE"]}
+except:
+    who = {"Actor":actor_data["Actor"], "Company":actor_data["Company"]}
 where = {"Place":""}
 when = {"Date":today_date, "Time":today_time}
 what = {"Appelation":"rti", "Description":""}
@@ -150,7 +182,8 @@ class user_interface:
         self.frame.grid(row=0, column=0, padx=10, pady=50, sticky='n')
         
         self.interface.update()
-        
+    
+    
     def close_window(self):
         try:
             bus = smbus.SMBus(1)
@@ -754,6 +787,11 @@ class user_interface:
         
         if camera_available == True and i2c_state != 0 :
             
+            subprocess.run(["gphoto2", "--folder", camera_folder,
+                                    "-R", "--delete-all-files"])
+            os.system("rm /home/pi/grandDome/images/rti/*.JPG")
+            os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
+            
             
             ######### Camera Battery Level
             try:
@@ -960,6 +998,8 @@ class user_interface:
                     
                     subprocess.run(["gphoto2", "--folder", camera_folder,
                                     "-R", "--delete-all-files"])
+                    os.system("rm /home/pi/grandDome/images/rti/*.JPG")
+                    os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
                     self.capture_wind_aq.destroy()
                     self.capture_wind.update_idletasks()()
                     self.capture_wind.update()
@@ -976,11 +1016,7 @@ class user_interface:
                     self.label_image_begin['image'] = self.camera_battery
                     self.label_image_begin.place(x=100, y=50)
             except:
-                self.project_name_label.config(text=" ") 
-                self.label_aq['text'] = " Veuillez redémarrer l'application !"
-                self.camera_disconnected = ImageTk.PhotoImage(Image.open(icons_path_+"camera_deconnectee.png").resize((260, 180)), Image.BILINEAR)
-                self.label_image_begin['image'] = self.camera_disconnected
-                camera_available = settings.camera_available()
+                self.capture_wind.destroy()
                 
                                         
         elif camera_available == False or i2c_state == 0 : 
@@ -1131,7 +1167,7 @@ class user_interface:
         bus.write_byte(0x44, 1)
         time.sleep(0.1)
         bus.write_block_data(0x44, 0, [3, int(value)])
-        value=0
+        value=0 
         
     def _on_scale_intensity(self, value):
         print(value)
@@ -1941,8 +1977,19 @@ def led_2_ctrl(state):
     elif state == 0:
         GPIO.output(4, GPIO.LOW)
 
+
 if __name__ == '__main__':
     settings.killprocess()
+    
+    try:
+        os.system("gphoto2 --set-config whitebalance=6")
+        os.system("gphoto2 --set-config iso=1")
+        os.system("gphoto2 --set-config aperture=3")
+        os.system("gphoto2 --set-config shutterspeed=23")
+    
+    except:
+        pass
+    
     try:
         os.system("rm /home/pi/grandDome/images/rti/*.JPG")
         os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
@@ -2000,6 +2047,14 @@ if __name__ == '__main__':
     
     main = main()
     main.mainloop()
+    
+    button=__Button__(use_button, hold_time=1.0, hold_repeat=True)
+    button.when_held = hld
+    button.when_released = rls
+
+    pause() # wait forever
+    
+        
     
     try:
         os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
