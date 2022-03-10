@@ -25,12 +25,13 @@ from zipfile import ZipFile
 
 ###***
 
-use_button=6                     # lowest button on PiTFT+
+
 
 from gpiozero import Button as __Button__
 from signal import pause
 from subprocess import check_call
 
+use_button=6                     # Input in RPi
 held_for=0.0
 
 def rls():
@@ -44,7 +45,6 @@ def rls():
 
 def hld():
         global held_for
-        # need to use max() as held_time resets to zero on last callback
         held_for = max(held_for, button.held_time + button.hold_time)
 
 
