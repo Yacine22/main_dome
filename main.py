@@ -11,7 +11,7 @@ from tkinter import *
 from tkinter.ttk import Progressbar, Combobox, Style
 from tkinter.font import Font
 from PIL import ImageTk, Image, ImageGrab
-import os, shutil, subprocess, signal
+import os, shutil, subprocess, signal, sys
 import smbus, time, datetime
 import json
 from sh import gphoto2 as gp
@@ -25,27 +25,26 @@ from zipfile import ZipFile
 
 ###***
 
-
+use_button=6        
 
 from gpiozero import Button as __Button__
 from signal import pause
 from subprocess import check_call
 
-use_button=6                     # Input in RPi
 held_for=0.0
 
 def rls():
-        global held_for
-        if (held_for > 6.0):
-                check_call(['/sbin/poweroff'])
-        elif (held_for > 1.0):
-                check_call(['/sbin/reboot'])
-        else:
-            held_for = 0.0
+    global held_for
+    if (held_for > 6.0):
+        check_call(['/sbin/poweroff'])
+    elif (held_for > 1.0):
+        check_call(['/sbin/reboot'])
+    else:
+        held_for = 0.0
 
 def hld():
-        global held_for
-        held_for = max(held_for, button.held_time + button.hold_time)
+    global held_for
+    held_for = max(held_for, button.held_time + button.hold_time)
 
 
 
@@ -193,6 +192,7 @@ class user_interface:
             pass
         mario_sound(100)
         self.interface.destroy()
+        sys.exit("Quit")
 ### ----------------------------------------   Menu Reglages ---------------------------------------------------------------------
 
     def menu_reglages(self):
@@ -1016,7 +1016,11 @@ class user_interface:
                     self.label_image_begin['image'] = self.camera_battery
                     self.label_image_begin.place(x=100, y=50)
             except:
-                self.capture_wind.destroy()
+                self.project_name_label.config(text=" ") 
+                self.label_aq['text'] = " Caméra Pas Prête, Redémarrez l'Application  !"
+                self.camera_disconnected = ImageTk.PhotoImage(Image.open(icons_path_+"camera_deconnectee.png").resize((260, 180)), Image.BILINEAR)
+                self.label_image_begin['image'] = self.camera_disconnected
+                camera_available = settings.camera_available()
                 
                                         
         elif camera_available == False or i2c_state == 0 : 
@@ -2052,10 +2056,9 @@ if __name__ == '__main__':
     button.when_held = hld
     button.when_released = rls
 
-    pause() # wait forever
+    pause() 
     
-        
-    
+   
     try:
         os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
     except:
