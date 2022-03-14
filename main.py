@@ -25,7 +25,7 @@ from zipfile import ZipFile
 
 ###***
 
-use_button=6                     # lowest button on PiTFT+
+use_button=27                    # lowest button on PiTFT+
 
 from gpiozero import Button as __Button__
 from signal import pause
@@ -763,7 +763,8 @@ class user_interface:
         im.save(rti_path+str(projectName)+"/thumbnail.JPG")
         print("Thumb Created !")
         self.label_aq.config(text="Ne pas Toucher le DOME SVP")
-         
+        clear_cam_folder()
+        
     def __stop__(self):
         """
         Stop i2c transmission 
@@ -778,6 +779,7 @@ class user_interface:
     def _aquisition_(self, image_nb):
         global time_cut
         settings.killprocess()
+        clear_cam_folder()
         i2c_state = i2c_checker() ### Check i2c ? 
         leds_85 = [0, 1, 4, 6, 8, 11, 12, 13, 14, 17, 19, 21, 23, 24, 26, 27, 30] ## 85 LEDs Mode !
         
@@ -1013,6 +1015,8 @@ class user_interface:
                     except:
                         pass
                     
+                    
+                    clear_cam_folder()
                     subprocess.run(["gphoto2", "--folder", camera_folder,
                                     "-R", "--delete-all-files"])
                     
@@ -2008,7 +2012,14 @@ def led_2_ctrl(state):
     elif state == 0:
         GPIO.output(4, GPIO.LOW)
 
-
+def clear_cam_folder():
+    try:
+        for i in range(10):
+            gp(["--folder", "/store_00020001/DCIM/10"+str(i)+"CANON", "-R", "--delete-all-files"])
+    except:
+        pass
+    
+    
 if __name__ == '__main__':
     settings.killprocess()
     
@@ -2079,7 +2090,7 @@ if __name__ == '__main__':
     main = main()
     
     def pauser():
-        time.sleep(0.05)
+        time.sleep(0.1)
         pause()
         
     
