@@ -25,7 +25,7 @@ from zipfile import ZipFile
 
 ###***
 
-use_button=6        
+use_button=6                     # lowest button on PiTFT+
 
 from gpiozero import Button as __Button__
 from signal import pause
@@ -34,24 +34,29 @@ from subprocess import check_call
 held_for=0.0
 
 def rls():
-    global held_for
-    if (held_for > 6.0):
-        check_call(['/sbin/poweroff'])
-    elif (held_for > 1.0):
-        check_call(['/sbin/reboot'])
-    else:
-        held_for = 0.0
+        global held_for
+        if (held_for > 6.0):
+                check_call(['/sbin/poweroff'])
+                try:
+                    bus = smbus.SMBus(1)
+                    bus.write_byte(0x44, 1)
+                except:
+                    pass
+        elif (held_for > 1.0):
+                check_call(['/sbin/reboot'])
+                try:
+                    bus = smbus.SMBus(1)
+                    bus.write_byte(0x44, 1)
+                except:
+                    pass
+        else:
+            held_for = 0.0
 
 def hld():
-    global held_for
-    held_for = max(held_for, button.held_time + button.hold_time)
-
-
-
+        global held_for
+        # need to use max() as held_time resets to zero on last callback
+        held_for = max(held_for, button.held_time + button.hold_time)
 ####
-
-
-
 ###### metadata ---------------------------------
 # focal = settings.focal_length()
 today_time = datetime.datetime.now().strftime("%H:%M")
@@ -105,6 +110,7 @@ global intensity
 time_cut = 0.6 ## Default
 sortir = True
 intensity = 36
+
 class user_interface:
    
     def __init__(self): 
@@ -192,7 +198,7 @@ class user_interface:
             pass
         mario_sound(100)
         self.interface.destroy()
-        sys.exit("Quit")
+        sys.exit("close")
 ### ----------------------------------------   Menu Reglages ---------------------------------------------------------------------
 
     def menu_reglages(self):
@@ -255,7 +261,7 @@ class user_interface:
     ##### ---- chantier ici !!     
     
     def start_captures(self): 
-        self.capture_wind = Toplevel()
+        self.capture_wind = Toplevel(self.interface)
         self.capture_wind.attributes('-fullscreen', True)
         #self.capture_wind.geometry("800x480")
         self.capture_wind.configure(bg="#212121")
@@ -429,6 +435,8 @@ class user_interface:
         
         self.label_aq = Label(self.capture_wind_aq, text="", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1))
         
+        self.label_attention = Label(self.capture_wind_aq, text="Ne Pas toucher le DOME SVP!", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1))
+        
         self.project_name = self.entry_projectName.get()
         self.project_name_label =  Label(self.capture_wind_aq, width=15, height=2, text="Nom du Projet : "+self.project_name,
                                          bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 14 * -1))
@@ -448,6 +456,7 @@ class user_interface:
         
         
         self.capture_frame_aq.grid(row=0, column=0, sticky="news")
+        self.label_attention.place(x=275, y=2)
         self.project_name_label.place(x=275, y=33)
         self.label_image_begin.place(x=230, y=50)
         self.label_acquistion_info.place(x=275, y=60)
@@ -486,11 +495,9 @@ class user_interface:
             'MICRO DOME' or 'GRAND DOME'.
         aq_type : TYPE : STRING
            'RAPIDE' or 'DENSE'.
-
         Returns
         -------
         None.
-
         """
         dome_options = {"MICRO DOME":{"RAPIDE":35, "DENSE":105}, "GRAND DOME":{"RAPIDE":85, "DENSE":155}}
         nb_of_aq = dome_options[dome_type][aq_type]
@@ -527,7 +534,9 @@ class user_interface:
     ### ----------------------------------------   See Projects ---------------------------------------------------------------------
     
     def projects(self):
-        self.project_wind = Toplevel()
+        os.system("rm /home/pi/grandDome/images/rti/*.JPG")
+        os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
+        self.project_wind = Toplevel(self.interface)
         self.project_wind.attributes('-fullscreen', True)
         #self.project_wind.geometry("800x480")
         self.project_wind.configure(bg="#212121")
@@ -590,6 +599,8 @@ class user_interface:
         
     
     def selection(self, event):
+        os.system("rm /home/pi/grandDome/images/rti/*.JPG")
+        os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
         self.project_wind.update()
         self.button_delete_project['state'] = NORMAL 
         self.button_copy_project['state'] = NORMAL
@@ -750,7 +761,8 @@ class user_interface:
         im = Image.open(rti_path+str(projectName)+"/image.JPG")
         im.thumbnail((580, 400), Image.ANTIALIAS)
         im.save(rti_path+str(projectName)+"/thumbnail.JPG")
-        print("Thumb Created !")  
+        print("Thumb Created !")
+        self.label_aq.config(text="Ne pas Toucher le DOME SVP")
          
     def __stop__(self):
         """
@@ -765,6 +777,7 @@ class user_interface:
         
     def _aquisition_(self, image_nb):
         global time_cut
+        settings.killprocess()
         i2c_state = i2c_checker() ### Check i2c ? 
         leds_85 = [0, 1, 4, 6, 8, 11, 12, 13, 14, 17, 19, 21, 23, 24, 26, 27, 30] ## 85 LEDs Mode !
         
@@ -784,7 +797,7 @@ class user_interface:
         default_projectname = datetime.datetime.now().strftime("%d%m%Y%H%M%S")
         camera_available = settings.camera_available()
     
-        
+        settings.killprocess()
         if camera_available == True and i2c_state != 0 :
             
             subprocess.run(["gphoto2", "--folder", camera_folder,
@@ -792,11 +805,14 @@ class user_interface:
             os.system("rm /home/pi/grandDome/images/rti/*.JPG")
             os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
             
+            settings.killprocess()
             
             ######### Camera Battery Level
             try:
+                settings.killprocess()
                 battery_level = int(settings.image_data("batterylevel")['Current'][-4:-1])
                 print("---Batterie---", battery_level)
+                settings.killprocess()
                 if (battery_level > 5):
        
                     self.icon_retour = ImageTk.PhotoImage(Image.open(icons_path_+"IconeAnnuler.png").resize((65, 65)), Image.BILINEAR)
@@ -813,16 +829,16 @@ class user_interface:
                     self.progress_bar = Progressbar(self.capture_wind_aq, style="green.Horizontal.TProgressbar", orient=HORIZONTAL, length=400)
                    
                     
-                    self.label_image_begin = Label(self.capture_wind_aq, width=400, height=300, bg="#212121")
+                    self.label_image_begin = Label(self.capture_wind_aq, width=450, height=300, bg="#212121")
                     self.label_image_begin.place(x=175, y=50)
                     
-                    self.begin_image_ = ImageTk.PhotoImage(Image.open(icons_path_+"connected.png").resize((150, 150)), Image.BILINEAR)
+                    self.begin_image_ = ImageTk.PhotoImage(Image.open(icons_path_+"connected.png").resize((150, 100)), Image.BILINEAR)
                     self.label_image_begin.config(image=self.begin_image_)
                     
                     self.label_aq = Label(self.capture_wind_aq, text="", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1))
                     self.label_aq.place(x=275, y=400)
                     
-                    self.label_aq.config(text="Caméra et i2c détectées")
+                    self.label_aq.config(text="Caméra et i2c détectées" +"\n Ne pas Toucher le DOME SVP")
                     #self.progress_bar.place(x=200, y=360)
                     
                     self.capture_wind_aq.update_idletasks()
@@ -919,11 +935,12 @@ class user_interface:
                     except:
                         pass
                     
-                    self.progress_bar.place(x=175, y=375)
+                    self.progress_bar.place(x=200, y=375)
                     for s, i in enumerate(led_list):
                         settings.killprocess()
                         print(str(s), i)
-                        self.label_aq.config(text="En Cours de PDV "+str(s)+"/"+str(image_nb)+" ... ")
+                        self.label_aq.config(text="En Cours de PDV "+str(s)+"/"+str(image_nb)+" ... "+"\n Ne Pas toucher le DOME SVP")
+                        self.label_attention.config(text="Ne Pas toucher le DOME SVP "+str(s)+"/"+str(image_nb)+" ... ")
                         self.progress_bar['value'] += 100/(len(led_list))
                         self.capture_wind_aq.update_idletasks()
                         if image_nb == 35:
@@ -998,17 +1015,22 @@ class user_interface:
                     
                     subprocess.run(["gphoto2", "--folder", camera_folder,
                                     "-R", "--delete-all-files"])
+                    
                     os.system("rm /home/pi/grandDome/images/rti/*.JPG")
                     os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
-                    self.capture_wind_aq.destroy()
-                    self.capture_wind.update_idletasks()()
-                    self.capture_wind.update()
+                    
+                    while (len(glob("/home/pi/grandDome/images/rti/*.JPG")) == 0):
+                        self.capture_wind_aq.destroy()
+                        self.capture_wind.update_idletasks()()
+                        self.capture_wind.update()
+                    
+                        self.capture_wind.destroy()
+                        
                     try:
                         bus.close()
                     except:
                         pass
                     
-                
                 elif (battery_level <= 5): 
                     self.project_name_label.config(text=" ") 
                     self.label_aq['text'] = " Le niveau de batterie de la caméra est < 25%"
@@ -1016,8 +1038,9 @@ class user_interface:
                     self.label_image_begin['image'] = self.camera_battery
                     self.label_image_begin.place(x=100, y=50)
             except:
+                settings.killprocess()
                 self.project_name_label.config(text=" ") 
-                self.label_aq['text'] = " Caméra Pas Prête, Redémarrez l'Application  !"
+                self.label_aq['text'] = " Caméra pas prête, redémarrez l'Application !"
                 self.camera_disconnected = ImageTk.PhotoImage(Image.open(icons_path_+"camera_deconnectee.png").resize((260, 180)), Image.BILINEAR)
                 self.label_image_begin['image'] = self.camera_disconnected
                 camera_available = settings.camera_available()
@@ -1136,11 +1159,11 @@ class user_interface:
         
         
         ## --------------------- Slides --------------------------------------------------------------------
-        self.slider_allumer_LedNum = Scale(self.frame_scales, width=20, length=350, label="Allumer LED N° x/160",  activebackground='white', from_=0, to=160,
+        self.slider_allumer_LedNum = Scale(self.frame_scales, width=20, length=535, label="Allumer LED N° x/160",  activebackground='white', from_=0, to=160,
                                            orient="horizontal", state=DISABLED, bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1, "bold"),
                                             troughcolor="#424035", highlightbackground="#FFF3AE", command=self._on_scale_LedN)
         
-        self.slider_intensity = Scale(self.frame_scales, width=20, length=350, label="Intensité", from_=0, to=35, orient="horizontal", state=DISABLED, 
+        self.slider_intensity = Scale(self.frame_scales, width=20, length=535, label="Intensité", from_=0, to=35, orient="horizontal", state=DISABLED, 
                                          troughcolor="#424035", fg="#FFF3AE", font=("Roboto Mono", 13 * -1, "bold"), bg="#212121",
                                               highlightbackground="#FFF3AE", command=self._on_scale_intensity)
         
@@ -1150,7 +1173,7 @@ class user_interface:
         self.dome_wind.rowconfigure(0, weight=1)
         self.dome_wind.columnconfigure(0, weight=1)
         
-        self.frame_scales.grid(row=1, column=0, sticky='s')
+        self.frame_scales.grid(row=1, column=0, padx=100, sticky='s')
         
         self.button_exit.pack(anchor=NW)
         self.button_tout_allumer.place(x=150, y=100)
@@ -1158,8 +1181,8 @@ class user_interface:
         self.button_allumer_led_x.place(x=550, y=100)
         
         
-        self.slider_allumer_LedNum.grid(row=5, column=0, pady=5, padx=5, sticky='s')
-        self.slider_intensity.grid(row=7, column=0, pady=5, padx=5, sticky='s')
+        self.slider_allumer_LedNum.grid(row=5, column=0, pady=5, padx=50, sticky='s')
+        self.slider_intensity.grid(row=7, column=0, pady=5, padx=50, sticky='s')
         
         self.frame.grid(row=0, column=0, sticky='news')
         self._label_mercurio_icon_.place(x=-15, y=425)
@@ -1257,18 +1280,20 @@ class user_interface:
         self.button_exit = Button(self.cam_wind, bg="#212121", command=self.cam_wind.destroy)
         self.button_exit['image'] = self._button_retour_icon_
         
+        settings.killprocess()
         if settings.camera_available() == True :
         
             camera_infos = []
+            settings.killprocess()
             for line in settings.about_camera():
                 line = str(line)[2:].split(':')
                 camera_infos.append(line)
             
             try:
-                aperture = int(settings.image_data("aperture")['Current'].split(':')[-1])
+                aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
                 iso = int(settings.image_data("iso")['Current'].split(':')[-1])
-                whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
-                shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
+                whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1].strip()
+                shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1].strip()
                 
                 _parameters_ = {'aperture':aperture, 'shutterspeed':shutterspeed,
                                          'iso':iso, 'whitebalance':whitebalance
@@ -1295,6 +1320,7 @@ class user_interface:
                     self.label = Label(self.frame, text=" "+d+" ", height=2, bd=2, width=20, relief="flat", font=("Roboto Mono", 15 * -1, "bold"), fg="#FFF3AE",
                                           bg="#212121").grid(row=i+1, column=0, padx=50, pady=20, sticky='news')
                 which["Camera"] = camera
+                settings.killprocess()
                 
             except:
                 self.label = Label(self.frame, text="Camera Pas Prête, Veuillez redémarrer l'application !", bg="#212121", width=50, font=("Roboto Mono", 16 * -1, "bold"),
@@ -1498,13 +1524,14 @@ class camera_info(Tk):
         self.exit_frame = Frame(self, bg="#212121")
         self.label_frame = Frame(self, bg="#212121")
         
+        settings.killprocess()
         if settings.camera_available() == True :
     
-            aperture = int(settings.image_data("aperture")['Current'].split(':')[-1])
+            aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
             iso = int(settings.image_data("iso")['Current'].split(':')[-1])
-            whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
-            shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
-            model = settings.image_data("cameramodel")['Current'].split(':')[-1]
+            whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1].strip()
+            shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1].strip()
+            model = settings.image_data("cameramodel")['Current'].split(':')[-1].strip()
             
             which["Camera"]["Model"] = model
             try:
@@ -1531,13 +1558,13 @@ class camera_info(Tk):
             
             for i,d in enumerate(display_list):
                 self.label = Label(self.label_frame, text=" "+d+" ", height=2, bd=2, width=15, relief="flat", bg='#424035',  font=('helvetica', 12, 'bold'),
-                                      fg="#FFF3AE").grid(row=i+1, column=0, padx=40, pady=15, sticky='news')
+                                      fg="#FFF3AE").grid(row=i+1, column=0, padx=30, pady=15, sticky='news')
         
             
             camera_list = list(additional_parameters.values())
             for i,d in enumerate(camera_list):
                 self.label = Label(self.label_frame, text=" "+str(d)+" ", height=2, bd=2, bg='#424035', fg="#FFF3AE", width=40, font=("Roboto Mono", 16 * -1, "bold")
-                                      ).grid(row=i+1, column=1, padx=40, pady=15, sticky='news')
+                                      ).grid(row=i+1, column=1, padx=30, pady=15, sticky='news')
         
         else :
             
@@ -1560,7 +1587,7 @@ class camera_info(Tk):
 
 def save_camera_data():
     aperture = settings.image_data("aperture")
-    aperture = int(aperture['Current'].split(':')[-1])
+    aperture = aperture['Current'].split(':')[-1]
     iso = int(settings.image_data("iso")['Current'].split(':')[-1])
     whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
     shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
@@ -2050,16 +2077,28 @@ if __name__ == '__main__':
     print("--*-*-*-*--***")
     
     main = main()
-    main.mainloop()
+    
+    def pauser():
+        time.sleep(0.05)
+        pause()
+        
     
     button=__Button__(use_button, hold_time=1.0, hold_repeat=True)
     button.when_held = hld
     button.when_released = rls
-
-    pause() 
     
-   
+    pause_ = threading.Thread(target=pause)
+    #main_loop_f = threading.Thread(target=main.mainloop)
+
+    #pause() # wait forever
+    #main.mainloop()
+    
+    #main_loop_f.start()
+    pause_.start()
+    main.mainloop()
     try:
         os.system("sudo rm /home/pi/grandDome/images/rti/*.JPG")
     except:
         pass
+    settings.killprocess()
+    
