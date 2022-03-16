@@ -458,7 +458,7 @@ class user_interface:
         self.capture_frame_aq.grid(row=0, column=0, sticky="news")
         self.label_attention.place(x=275, y=2)
         self.project_name_label.place(x=275, y=33)
-        self.label_image_begin.place(x=230, y=50)
+        self.label_image_begin.place(x=180, y=50)
         self.label_acquistion_info.place(x=275, y=60)
         self.label_aq.place(x=275, y=400)
         self.___label_mercurio_icone___.place(x=-15, y=425)
@@ -834,7 +834,7 @@ class user_interface:
                     self.label_image_begin = Label(self.capture_wind_aq, width=450, height=300, bg="#212121")
                     self.label_image_begin.place(x=175, y=50)
                     
-                    self.begin_image_ = ImageTk.PhotoImage(Image.open(icons_path_+"connected.png").resize((150, 100)), Image.BILINEAR)
+                    self.begin_image_ = ImageTk.PhotoImage(Image.open(icons_path_+"connected.png").resize((150, 135)), Image.BILINEAR)
                     self.label_image_begin.config(image=self.begin_image_)
                     
                     self.label_aq = Label(self.capture_wind_aq, text="", bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 13 * -1))
@@ -1040,12 +1040,12 @@ class user_interface:
                     self.label_aq['text'] = " Le niveau de batterie de la caméra est < 25%"
                     self.camera_battery = ImageTk.PhotoImage(Image.open(icons_path_+"camera_battery.png").resize((300, 280)), Image.BILINEAR)
                     self.label_image_begin['image'] = self.camera_battery
-                    self.label_image_begin.place(x=100, y=50)
+                    self.label_image_begin.place(x=85, y=50)
             except:
                 settings.killprocess()
                 self.project_name_label.config(text=" ") 
                 self.label_aq['text'] = " Caméra pas prête, redémarrez l'Application !"
-                self.camera_disconnected = ImageTk.PhotoImage(Image.open(icons_path_+"camera_deconnectee.png").resize((260, 180)), Image.BILINEAR)
+                self.camera_disconnected = ImageTk.PhotoImage(Image.open(icons_path_+"camera_deconnectee.png").resize((275, 260)), Image.BILINEAR)
                 self.label_image_begin['image'] = self.camera_disconnected
                 camera_available = settings.camera_available()
                 
@@ -2025,9 +2025,10 @@ if __name__ == '__main__':
     
     try:
         os.system("gphoto2 --set-config whitebalance=6")
-        os.system("gphoto2 --set-config iso=1")
+        os.system("gphoto2 --set-config iso=3")
         os.system("gphoto2 --set-config aperture=3")
-        os.system("gphoto2 --set-config shutterspeed=23")
+        os.system("gphoto2 --set-config shutterspeed=28")
+        settings.killprocess()
     
     except:
         pass
@@ -2066,10 +2067,12 @@ if __name__ == '__main__':
     ### Camera options
     camera_folder = "/store_00020001/DCIM/100CANON"
     print("---****-----")
+    """
     try:
         subprocess.run(["gphoto2", "--set-config", "eosremoterelease=4"]) #### Release = Immediate 5 --- Release Full 4 
     except:
         pass
+    """
     print("---****-----****----")
     trigCMD = ["--trigger-capture"]
     download_allCMD = ["--get-all-files"] ## download files
