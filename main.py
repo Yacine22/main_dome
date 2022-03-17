@@ -77,6 +77,7 @@ which = {"Camera":{"Type":"DSRL", "Model":"", "Focal":"", "Iso":"", "Aperture":"
          "Light":{"SourceType":"LED", "Number":"", "Natural":"True"}}
 why = {"Project":""}
 
+which["Domemodel"] = "Mercurio Dome V1"
 def metadata(who=who, where=where, when=when, what=what, how=how, which=which, why=why):    
     inside_data = {'WHO':who, 'WHERE':where, 'WHEN':when, 'WHAT':what, 'HOW':how, 'WHICH':which, 'WHY':why}
     metadata = {'Activity':inside_data}
