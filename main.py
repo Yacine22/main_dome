@@ -760,7 +760,7 @@ class user_interface:
         led_1_ctrl(1)
         
         im = Image.open(rti_path+str(projectName)+"/image.JPG")
-        im.thumbnail((580, 400), Image.ANTIALIAS)
+        im.thumbnail((600, 400), Image.ANTIALIAS)
         im.save(rti_path+str(projectName)+"/thumbnail.JPG")
         print("Thumb Created !")
         self.label_aq.config(text="Ne pas Toucher le DOME SVP")
@@ -892,7 +892,7 @@ class user_interface:
                                 self.capture_wind_aq.update()
                         self.thumbnail(default_projectname+"_"+str(image_nb))
                         self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+default_projectname+"_"+str(image_nb)+"/image.JPG"
-                                                                             ).resize((400, 300)), Image.BILINEAR)
+                                                                             ).resize((450, 300)), Image.BILINEAR)
                     else:
                         try:
                             os.mkdir(rti_path+projectname+"_"+str(image_nb))
@@ -900,7 +900,7 @@ class user_interface:
                             pass
                         self.thumbnail(projectname+"_"+str(image_nb))
                         self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+projectname+"_"+str(image_nb)+"/image.JPG"
-                                                                             ).resize((400, 300)), Image.BILINEAR)
+                                                                             ).resize((450, 300)), Image.BILINEAR)
                         
                     #####################################
                     
@@ -1222,6 +1222,7 @@ class user_interface:
     def _allOn_(self):
         time.sleep(0.1)
         self._AllOff_()
+        time.sleep(0.1)
         bus.write_block_data(0x44, 0, [2, 15])
         
         self.button_allumer_led_x['image'] = self.eteindre_ledX
