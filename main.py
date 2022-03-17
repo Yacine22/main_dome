@@ -445,7 +445,7 @@ class user_interface:
         self.label_acquistion_info = Label(self.capture_wind_aq, width=25, height=3, text="Type de Dome : "+self.dome_type+" \nType d'acquisition  :   "+self.aq_type, 
                                            bg="#212121", fg="#FFF3AE", font=("Roboto Mono", 15 * -1))
         
-        self.label_image_begin = Label(self.capture_wind_aq, width=400, height=300, bg="#212121")
+        self.label_image_begin = Label(self.capture_wind_aq, width=450, height=300, bg="#212121")
      
         self._mode_acquisition_(self.dome_type, self.aq_type)
        
