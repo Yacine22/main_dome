@@ -268,6 +268,8 @@ class user_interface:
         self.capture_wind.configure(bg="#212121")
         
         try:
+            bus.write_block_data(0x44, 0, [2, 0])
+            time.sleep(0.1)
             bus.write_block_data(0x44, 0, [2, intensity])
         except:
             pass
@@ -634,6 +636,8 @@ class user_interface:
         #shutil.copy(rti_path+projet_select, usb_path)
         
     def copy_to_usb_(self):
+        global copy
+        copy = False 
         self.project_wind.update()
         
         projet_select = self.listeProjet.get(self.listeProjet.curselection())
@@ -665,6 +669,7 @@ class user_interface:
                 self.button_delete_project['state'] = DISABLED
                 
                 while(number_of_files_usb<number_of_files):
+                    copy = True
                     print("copying")
                     number_of_files_usb = self.number_of_files(usb_path+"/"+projet_select)
                     print(number_of_files_usb)
@@ -888,7 +893,7 @@ class user_interface:
                         if os.path.exists(rti_path+default_projectname+"_"+str(image_nb)):
                             print("ça existe!")
                             while(os.path.exists(rti_path+default_projectname+"_"+str(image_nb))):
-                                self.label_aq.config(text="Le nom de projet existe déjà")
+                                self.label_aq.config(text="Veuillez donner un nom au projet SVP !")
                                 self.capture_wind_aq.update()
                         self.thumbnail(default_projectname+"_"+str(image_nb))
                         self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+default_projectname+"_"+str(image_nb)+"/image.JPG"
@@ -979,7 +984,7 @@ class user_interface:
                     while(nombre_img<image_nb):
                         nombre_img = len(glob(rti_path+"*.JPG"))
                         self.progress_bar['value'] = ((nombre_img)/(image_nb))*100
-                        self.label_aq.config(text=str(nombre_img)+"/"+str(image_nb))
+                        self.label_aq.config(text="Transfert en cours  " + str(nombre_img)+"/"+str(image_nb))
                         self.capture_wind_aq.update_idletasks()
                         self.capture_wind_aq.update()
                                  
@@ -2117,4 +2122,4 @@ if __name__ == '__main__':
     except:
         pass
     settings.killprocess()
-    
+   
