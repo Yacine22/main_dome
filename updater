@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+
+import functools
+import os.path
+import pyudev
+import subprocess
+import shutil
+
+main_dome_in_RPi = "/home/pi/grandDome/main.py"
+updated_main = "./main.py"
+
+def main():
+    BASE_PATH = os.path.abspath(os.path.dirname(__file__))
+    path = functools.partial(os.path.join, BASE_PATH)
+    call = lambda x, *args: subprocess.call([path(x)] + list(args))
+
+    context = pyudev.Context()
+    monitor = pyudev.Monitor.from_netlink(context)
+    monitor.filter_by(subsystem='usb')  
+    monitor.start()
+
+    for device in iter(monitor.poll, None):
+        shutil.move(updated_main, main_dome_in_RPi)
+        
+        
+if __name__ == '__main__':
+    main()
