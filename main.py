@@ -761,6 +761,11 @@ class user_interface:
         except:
             pass
         
+        try: ### NIKON or others
+            gp(["-R", "--delete-all-files"])
+        except:
+            pass
+        
         bus.write_block_data(0x44, 0, [2, intensity])
         thumb_name = "thumbnail.JPG"
         subprocess.run(["gphoto2", "--capture-image-and-download", "--filename", rti_path+str(projectName)+"/image.JPG"])
@@ -2087,7 +2092,7 @@ if __name__ == '__main__':
         pass
     
     try: ### NIKON or others
-        gp(["--folder", "-R", "--delete-all-files"])
+        gp(["-R", "--delete-all-files"])
     except:
         pass
 
@@ -2143,3 +2148,4 @@ if __name__ == '__main__':
         pass
     settings.killprocess()
    
+
