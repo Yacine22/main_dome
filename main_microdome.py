@@ -5,7 +5,7 @@ call(['espeak "Welcome to granDome" 2>/dev/null'], shell=True)
 """
 User interface to control simultanous captures and leds
 -- Using i2c from Raspberry and Arduino 
-@ mercurio
+@ mercurio -- 
 """
 from tkinter import *
 from tkinter.ttk import Progressbar, Combobox, Style
