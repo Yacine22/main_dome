@@ -258,7 +258,7 @@ class user_interface:
     def apropos(self):
         others()
         
-    ##### ---- chantier ici !!     
+    ##### ----     
     
     def start_captures(self): 
         self.capture_wind = Toplevel(self.interface)
@@ -752,7 +752,7 @@ class user_interface:
         gp(clearCMD)
         bus.write_block_data(0x44, 0, [2, intensity])
         thumb_name = "thumbnail.JPG"
-        subprocess.run(["gphoto2", "--capture-image-and-download", "--filename", rti_path+str(projectName)+"/image.JPG"])
+        subprocess.run(["gphoto2", "--capture-image-and-download", "--filename", rti_path+str(projectName)+"/image.JPG", "--force-overwrite"])
     
         settings.killprocess()
         
@@ -778,6 +778,7 @@ class user_interface:
         
     def _aquisition_(self, image_nb):
         global time_cut
+        cam_mod = settings.image_data("cameramodel")['Current'].split(':')[-1].strip()
         settings.killprocess()
         clear_cam_folder()
         i2c_state = i2c_checker() ### Check i2c ? 
@@ -802,8 +803,7 @@ class user_interface:
         settings.killprocess()
         if camera_available == True and i2c_state != 0 :
             
-            subprocess.run(["gphoto2", "--folder", camera_folder,
-                                    "-R", "--delete-all-files"])
+            subprocess.run(["gphoto2", "-R", "--delete-all-files"])
             try:
                 os.system("rm /home/pi/grandDome/images/rti/*.JPG")
             except:
@@ -872,15 +872,18 @@ class user_interface:
                         
                     json_file(metadata(which=which))
                     json_file(metadata(how=how))
-                    subprocess.run(["gphoto2", "--folder", camera_folder, "-R", "--delete-all-files"])
+                    print("***LET'S DELETE***")
+                    subprocess.run(["gphoto2", "-R", "--delete-all-files"])
                     ############### ------
                     projectname = self.project_data()
+                    
+                    print("***LET'S START***")
                     
                     self.label_aq['text'] = ""
                     while(os.path.exists(rti_path+projectname+"_"+str(image_nb))):
                         self.label_aq.config(text="Le nom de projet existe déjà")
                         self.capture_wind_aq.update()
-                    
+                    print("len projectname", len(projectname))
                     if len(projectname) == 0:
                         try:
                             os.mkdir(rti_path+default_projectname+"_"+str(image_nb))
@@ -891,6 +894,7 @@ class user_interface:
                             while(os.path.exists(rti_path+default_projectname+"_"+str(image_nb))):
                                 self.label_aq.config(text="Le nom de projet existe déjà")
                                 self.capture_wind_aq.update()
+                        print("Thumb is Ready")
                         self.thumbnail(default_projectname+"_"+str(image_nb))
                         self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+default_projectname+"_"+str(image_nb)+"/image.JPG"
                                                                              ).resize((450, 300)), Image.BILINEAR)
@@ -899,13 +903,14 @@ class user_interface:
                             os.mkdir(rti_path+projectname+"_"+str(image_nb))
                         except:
                             pass
+                        print("Thumb is Ready")
                         self.thumbnail(projectname+"_"+str(image_nb))
                         self.thumbnail_image = ImageTk.PhotoImage(Image.open(rti_path+projectname+"_"+str(image_nb)+"/image.JPG"
                                                                              ).resize((450, 300)), Image.BILINEAR)
                         
                     #####################################
                     
-                   
+                    print("***HERE WE GO***")
                     self.label_image_begin['image'] = self.thumbnail_image
                     
                     what["Appelation"]=projectname
@@ -914,6 +919,7 @@ class user_interface:
                     file_name = rti_path+projectname+"rti%Y%m%d%H%M%S%f.%C"
                     
                     #### Save Json File
+                    print("***LET'S SAVE DATA***")
                     camera_data = save_camera_data()
                     which.update(camera_data)
                     
@@ -951,8 +957,10 @@ class user_interface:
                             bus.write_block_data(0x44, 0, [6, i])
                         else:
                             bus.write_block_data(0x44, 0, [3, i])
-                        time.sleep(0.01)
-                        subprocess.run(["gphoto2", "--trigger-capture", "--wait-event=10ms"])
+                        time.sleep(0.05)
+                        if  cam_mod == 'D800E': 
+                            subprocess.run(["gphoto2", "--trigger-capture", "--wait-event=20ms"]) #CAPTURECOMPLETE
+                        subprocess.run(["gphoto2", "--trigger-capture", "--wait-event=15ms"])
                         time.sleep(time_cut)
                         self.capture_wind_aq.update()
                     bus.write_byte(0x44, 1)
@@ -1019,8 +1027,7 @@ class user_interface:
                     
                     
                     clear_cam_folder()
-                    subprocess.run(["gphoto2", "--folder", camera_folder,
-                                    "-R", "--delete-all-files"])
+                    subprocess.run(["gphoto2", "-R", "--delete-all-files"])
                     
                     try:
                         os.system("rm /home/pi/grandDome/images/rti/*.JPG")
@@ -1291,18 +1298,32 @@ class user_interface:
         settings.killprocess()
         if settings.camera_available() == True :
         
-            camera_infos = []
-            settings.killprocess()
-            for line in settings.about_camera():
-                line = str(line)[2:].split(':')
-                camera_infos.append(line)
-            
             try:
-                aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
-                iso = int(settings.image_data("iso")['Current'].split(':')[-1])
-                whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1].strip()
-                shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1].strip()
+                camera_infos = []
+                settings.killprocess()
+                for line in settings.about_camera():
+                    line = str(line)[2:].split(':')
+                    camera_infos.append(line)
                 
+                
+                if "aperture" in settings.configInCam():
+                    aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
+                else:
+                    aperture = 0
+                if "iso" in settings.configInCam():
+                    iso = int(settings.image_data("iso")['Current'].split(':')[-1])
+                else:
+                    iso = 0
+                if "whitebalance" in settings.configInCam():
+                    whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1].strip()
+                else:
+                    whitebalance = 0
+                    
+                if "shutterspeed" in settings.configInCam():
+                    shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1].strip()
+                else:
+                    shutterspeed = 0
+                    
                 _parameters_ = {'aperture':aperture, 'shutterspeed':shutterspeed,
                                          'iso':iso, 'whitebalance':whitebalance
                                          }
@@ -1315,13 +1336,15 @@ class user_interface:
                     self.scrollbar = Scrollbar(self.frame, orient="vertical", width=35, bg="#FFF3AE", troughcolor="#212121")
                     self.list_para = Listbox(self.frame, height=2, width=25, exportselection=0, font=("Roboto Mono", 20 * -1, "bold"), bg="#212121", fg="#FFF3AE",
                                              selectmode=SINGLE, yscrollcommand=self.scrollbar.set)
-                    para_list = settings.image_data(param)['Choices']
-                    for j in para_list:
-                        self.list_para.insert(END, param+" "+j.split(" ")[-1]+" "+j.split(" ")[1])    
-                    self.scrollbar.grid(row=i+1, column=2, padx=5, pady=20, sticky='news')
-                    self.list_para.grid(row=i+1, column=1, padx=15, pady=20, sticky='news')
-                    self.scrollbar.config(command=self.list_para.yview)
-                    self.list_para.bind('<<ListboxSelect>>', self.select_text)
+                    
+                    if param in settings.configInCam():
+                        para_list = settings.image_data(param)['Choices']
+                        for j in para_list:
+                            self.list_para.insert(END, param+" "+j.split(" ")[-1]+" "+j.split(" ")[1])    
+                        self.scrollbar.grid(row=i+1, column=2, padx=5, pady=20, sticky='news')
+                        self.list_para.grid(row=i+1, column=1, padx=15, pady=20, sticky='news')
+                        self.scrollbar.config(command=self.list_para.yview)
+                        self.list_para.bind('<<ListboxSelect>>', self.select_text)
       
                 
                 for i,d in enumerate(display_list):
@@ -1330,6 +1353,7 @@ class user_interface:
                 which["Camera"] = camera
                 settings.killprocess()
                 
+            
             except:
                 self.label = Label(self.frame, text="Camera Pas Prête, Veuillez redémarrer l'application !", bg="#212121", width=50, font=("Roboto Mono", 16 * -1, "bold"),
                                fg="#FFF3AE").place(x=150, y=100)
@@ -1338,7 +1362,7 @@ class user_interface:
                 self.label_camera_deconnectee.place(x=325, y=235)
                 self.button_exit = Button(self.frame, bg="#212121", command=self.cam_wind.destroy)
                 self.button_exit['image'] = self._button_retour_icon_
-        
+                
         else :
             self.label = Label(self.frame, text=" Aucune caméra détectée, branchez la caméra SVP !", bg="#212121", width=50, font=("Roboto Mono", 16 * -1, "bold"),
                                fg="#FFF3AE").place(x=150, y=100)
@@ -1535,12 +1559,28 @@ class camera_info(Tk):
         settings.killprocess()
         if settings.camera_available() == True :
     
-            aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
-            iso = int(settings.image_data("iso")['Current'].split(':')[-1])
-            whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1].strip()
-            shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1].strip()
-            model = settings.image_data("cameramodel")['Current'].split(':')[-1].strip()
-            
+            if "aperture" in settings.configInCam():
+                aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
+            else:
+                aperture = 0
+            if "iso" in settings.configInCam():
+                iso = int(settings.image_data("iso")['Current'].split(':')[-1])
+            else:
+                iso = 0
+            if "whitebalance" in settings.configInCam():
+                whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1].strip()
+            else:
+                whitebalance = 0
+                
+            if "shutterspeed" in settings.configInCam():
+                shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1].strip()
+            else:
+                shutterspeed = 0
+            if "cameramodel" in settings.configInCam():
+                model = settings.image_data("cameramodel")['Current'].split(':')[-1].strip()
+            else:
+                model = "nA"
+                
             which["Camera"]["Model"] = model
             try:
                 which["Camera"]["Focal"] = focal
@@ -1551,6 +1591,7 @@ class camera_info(Tk):
             which["Camera"]["Whitebalance"] = whitebalance
             which["Camera"]["Shutterspeed"] = shutterspeed
             json_file(metadata(which=which))
+            print(which)
             
     
             try:
@@ -1561,7 +1602,7 @@ class camera_info(Tk):
             additional_parameters = {'Focal':focal, 'Aperture':aperture,
                                      'ISO':iso, 'Whitebalance':whitebalance,
                                      'Shutterspeed':shutterspeed, 'Model':model}
-            
+            print(additional_parameters)
             display_list = list(additional_parameters.keys())
             
             for i,d in enumerate(display_list):
@@ -1594,13 +1635,28 @@ class camera_info(Tk):
         
 
 def save_camera_data():
-    aperture = settings.image_data("aperture")
-    aperture = aperture['Current'].split(':')[-1]
-    iso = int(settings.image_data("iso")['Current'].split(':')[-1])
-    whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
-    shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
-    model = settings.image_data("cameramodel")['Current'].split(':')[-1]
-    
+    if "aperture" in settings.configInCam():
+        aperture = settings.image_data("aperture")
+        aperture = aperture['Current'].split(':')[-1]
+    else:
+        aperture = "nA"
+    if "iso" in settings.configInCam():    
+        iso = int(settings.image_data("iso")['Current'].split(':')[-1])
+    else:
+        iso = "nA"
+    if "whitebalance" in settings.configInCam():
+        whitebalance = settings.image_data("whitebalance")['Current'].split(':')[-1]
+    else:
+        whitebalance = "nA"
+    if "shutterspeed" in settings.configInCam():
+        shutterspeed = settings.image_data("shutterspeed")['Current'].split(':')[-1]
+    else:
+        shutterspeed = "nA"
+    if "cameramodel" in settings.configInCam():
+        model = settings.image_data("cameramodel")['Current'].split(':')[-1]
+    else:
+        model = "nA"
+        
     try:
         which["Camera"]["Focal"] = focal
     except:
@@ -1812,7 +1868,7 @@ class _camera_folder_:
         keypad_frame = Frame(self.envi_wind, bg="#212121")
         
         self.camera_folder_label = "Dossier des images"
-        self.camera_folder = "/store_00020001/DCIM/100CANON"
+        self.camera_folder = settings.queryCameras()
 
         
         self.icone_deRetour = Image.open(icons_path_+"IconeRetour.png").resize((65, 65))
@@ -1854,9 +1910,9 @@ class _camera_folder_:
         
                 
     def edit_camera_folder(self):
-        self.camera_folder_editer = Entry(self.frame, bg='#212121', fg='#FFF3AE', font=("Roboto Mono", 13 * -1, "bold"), width=4)
-        self.camera_folder_editer.insert(END, 100)
-        self.camera_folder_editer.grid(row=1, column=1, padx=10, pady=10, sticky='news')
+        #self.camera_folder_editer = Entry(self.frame, bg='#212121', fg='#FFF3AE', font=("Roboto Mono", 13 * -1, "bold"), width=4)
+        #self.camera_folder_editer.insert(END, 100)
+        #self.camera_folder_editer.grid(row=1, column=1, padx=10, pady=10, sticky='news')
         
         self.capture_delay_set = Entry(self.frame, bg='#212121', fg='#FFF3AE', font=("Roboto Mono", 13 * -1, "bold"), width=4)
         self.capture_delay_set.insert(END, time_cut*1000)
@@ -2030,8 +2086,8 @@ if __name__ == '__main__':
     try:
         os.system("gphoto2 --set-config whitebalance=6")
         os.system("gphoto2 --set-config iso=3")
-        os.system("gphoto2 --set-config aperture=3")
         os.system("gphoto2 --set-config shutterspeed=28")
+        os.system("gphoto2 --set-config aperture=3")
         settings.killprocess()
     
     except:
@@ -2062,6 +2118,7 @@ if __name__ == '__main__':
     lp_path = "/home/pi/grandDome/LPFiles/"
     
     try:
+        gp(["-R", "--delete-all-files"])
         for i in range(10):
             gp(["--folder", "/store_00020001/DCIM/10"+str(i)+"CANON", "-R", "--delete-all-files"])
     except:
@@ -2079,7 +2136,7 @@ if __name__ == '__main__':
     print("---****-----****----")
     trigCMD = ["--trigger-capture"]
     download_allCMD = ["--get-all-files"] ## download files
-    clearCMD = ["--folder", camera_folder, "-R", "--delete-all-files"] ### To Change if the camera is not Canon !!
+    clearCMD = ["-R", "--delete-all-files"] ### To Change if the camera is not Canon !!
     
     shot_date = datetime.datetime.now().strftime("%Y%m%d")
     shot_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
