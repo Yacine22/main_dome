@@ -1307,11 +1307,11 @@ class user_interface:
                 
                 
                 if "aperture" in settings.configInCam():
-                    aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
+                    aperture = settings.image_data("aperture")['Current'].split(':')[-1]
                 else:
                     aperture = 0
                 if "iso" in settings.configInCam():
-                    iso = int(settings.image_data("iso")['Current'].split(':')[-1])
+                    iso = settings.image_data("iso")['Current'].split(':')[-1]
                 else:
                     iso = 0
                 if "whitebalance" in settings.configInCam():
@@ -1560,11 +1560,11 @@ class camera_info(Tk):
         if settings.camera_available() == True :
     
             if "aperture" in settings.configInCam():
-                aperture = float(settings.image_data("aperture")['Current'].split(':')[-1])
+                aperture = settings.image_data("aperture")['Current'].split(':')[-1]
             else:
                 aperture = 0
             if "iso" in settings.configInCam():
-                iso = int(settings.image_data("iso")['Current'].split(':')[-1])
+                iso = settings.image_data("iso")['Current'].split(':')[-1]
             else:
                 iso = 0
             if "whitebalance" in settings.configInCam():
