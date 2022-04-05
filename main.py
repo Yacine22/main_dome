@@ -1868,7 +1868,10 @@ class _camera_folder_:
         keypad_frame = Frame(self.envi_wind, bg="#212121")
         
         self.camera_folder_label = "Dossier des images"
-        self.camera_folder = settings.queryCameras()
+        try:
+            self.camera_folder = settings.queryCameras()
+        except:
+            self.camera_folder = "nA"
 
         
         self.icone_deRetour = Image.open(icons_path_+"IconeRetour.png").resize((65, 65))
