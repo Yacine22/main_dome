@@ -24,7 +24,7 @@ new_ino = "/home/pi/new_dome/dome_tester/dome_tester.ino"
 if not filecmp.cmp(new_ino, old_ino) : ## If two files are Different
     try:
         print("Arduino Mis à Jour")
-        os.system("sudo avrdude -p atmega328p -C ~/avrdude_gpio.conf -c pi_1 -v -U flash:w:+"hex_filePath+":i")
+        os.system("sudo avrdude -p atmega328p -C ~/avrdude_gpio.conf -c pi_1 -v -U flash:w:"+hex_filePath+":i")
     except:
         pass
 
