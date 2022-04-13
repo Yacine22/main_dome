@@ -4,6 +4,7 @@ import git
 from tkinter import *
 from PIL import ImageTk, Image, ImageGrab
 import os, shutil, subprocess
+import filecmp
 
 icons_path_ = "/home/pi/grandDome/ICONES/"
 
@@ -15,6 +16,17 @@ repo = git.Repo.clone_from(
     'https://github.com/Yacine22/grandDome.git',
     '/home/pi/new_dome',
     progress=Progress())
+
+#### Update Arduino Device -----
+hex_filePath = "/home/pi/grandDome/dome_tester/dome_tester.ino.eightanaloginputs.hex"
+old_ino = "/home/pi/grandDome/dome_tester/dome_tester.ino"
+new_ino = "/home/pi/new_dome/dome_tester/dome_tester.ino"
+if not filecmp.cmp(new_ino, old_ino) : ## If two files are Different
+    try:
+        print("Arduino Mis à Jour")
+        os.system("sudo avrdude -p atmega328p -C ~/avrdude_gpio.conf -c pi_1 -v -U flash:w:+"hex_filePath+":i")
+    except:
+        pass
 
 dst = '/home/pi/grandDome/'
 
