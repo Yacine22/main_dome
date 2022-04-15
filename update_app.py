@@ -31,6 +31,10 @@ if not filecmp.cmp(new_ino, old_ino) : ## If two files are Different
 dst = '/home/pi/grandDome/'
 
 shutil.copy2('/home/pi/new_dome/main.py', dst)
+try:
+    shutil.copy2('/home/pi/new_dome/microdome_main.py', dst)
+except:
+    pass
 shutil.copy2('/home/pi/new_dome/settings.py', dst)
 shutil.copy2('/home/pi/new_dome/ext.py', dst)
 
