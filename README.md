@@ -14,15 +14,9 @@ Voici l'équipement nécessaire pour une acquisition RTI :
 
 -   Un appareil photo reflex numérique (Canon de préférence)
 
-```{=html}
-<!-- -->
-```
 -   Un Dôme RTI Mercurio (Voir la figure
     [2](#fig:dome){reference-type="ref" reference="fig:dome"}),
 
-```{=html}
-<!-- -->
-```
 -   Un trépied vidéo : Pour la bonne stabilité du dôme lors des sessions
     d'acquisition, il est fortement conseillé de mettre un trépied
     \"lourd\" type vidéo (Voir la figure
