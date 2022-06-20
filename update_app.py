@@ -11,16 +11,27 @@ icons_path_ = "/home/pi/grandDome/ICONES/"
 class Progress(git.remote.RemoteProgress):
     def update(self, op_code, cur_count, max_count=None, message=''):
         return op_code, cur_count, max_count, message
-    
+
+"""
 repo = git.Repo.clone_from(
-    'https://github.com/Yacine22/grandDome.git',
-    '/home/pi/new_dome',
-    progress=Progress())
+   'https://gitfront.io/r/user-5472422/4LC2mhpqjptE/domesUI.git',
+  '/home/pi/domesUI',
+  progress=Progress(), recursive=True)
+"""
+
+try:
+    p = subprocess.run(["rm", "-r", "domesUI"])
+    #p.wait()
+except:
+    pass
+
+p = subprocess.run(["git", "clone", "https://gitfront.io/r/user-5472422/hceYFP2qtKVU/domesUI.git"])
+#p.wait()
 
 #### Update Arduino Device -----
 hex_filePath = "/home/pi/grandDome/dome_tester/dome_tester.ino.eightanaloginputs.hex"
 old_ino = "/home/pi/grandDome/dome_tester/dome_tester.ino"
-new_ino = "/home/pi/new_dome/dome_tester/dome_tester.ino"
+new_ino = "/home/pi/domesUI/dome_tester/dome_tester.ino"
 if not filecmp.cmp(new_ino, old_ino) : ## If two files are Different
     try:
         print("Arduino Mis à Jour")
@@ -30,16 +41,16 @@ if not filecmp.cmp(new_ino, old_ino) : ## If two files are Different
 
 dst = '/home/pi/grandDome/'
 
-shutil.copy2('/home/pi/new_dome/main.py', dst)
+shutil.copy2('/home/pi/domesUI/main.py', dst)
 try:
-    shutil.copy2('/home/pi/new_dome/microdome_main.py', dst)
+    shutil.copy2('/home/pi/domesUI/microdome_main.py', dst)
 except:
     pass
-shutil.copy2('/home/pi/new_dome/settings.py', dst)
-shutil.copy2('/home/pi/new_dome/ext.py', dst)
+shutil.copy2('/home/pi/domesUI/settings.py', dst)
+shutil.copy2('/home/pi/domesUI/ext.py', dst)
 
-src_dir = '/home/pi/new_dome/maj/'
-dome_dir = '/home/pi/new_dome/dome_tester/'
+src_dir = '/home/pi/domesUI/maj/'
+dome_dir = '/home/pi/domesUI/dome_tester/'
 try:
     os.system("cp -R "+src_dir+" "+dst)
     os.system("cp -R "+dome_dir+" "+dst)
